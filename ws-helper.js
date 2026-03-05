@@ -125,11 +125,12 @@ for (const msg of msgArray) {
   });
 
   // Fallback listener to log any other message updates
-  sock.ev.on('messages.update', async ({ messages }) => {
-    for (const msg of messages) {
-      console.log('🔔 messages.update received', JSON.stringify(msg, null, 2));
-    }
-  });
+sock.ev.on('messages.update', async ({ messages }) => {
+      const msgs = Array.isArray(messages) ? messages : [messages];
+      for (const msg of msgs) {
+        console.log('🔔 messages.update received', JSON.stringify(msg, null, 2));
+      }
+    });
 }
 
 start().catch(e => console.error('❌ Fatal error:', e));
