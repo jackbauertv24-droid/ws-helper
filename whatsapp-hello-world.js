@@ -59,25 +59,15 @@ async function start() {
 
 start().catch((e) => console.error('❌ Fatal error:', e));
 
-// Exit after 30 seconds to avoid hanging (or earlier after QR)
-let exitTimer = setTimeout(() => {
-  console.log('⏱️ Test timeout reached – exiting');
-  process.exit(0);
-}, 30000);
-
-// If QR is printed, we can end early (user can scan manually)
+// Handle QR code rendering – no forced timeout
 function handleQrPrinted(qr) {
   // Render QR code in terminal using qrcode-terminal
   qrcode.generate(qr, { small: true });
   if (!qrPrinted) {
     qrPrinted = true;
     console.log('✅ QR code displayed – you may scan it now.');
-    // keep the process alive for a bit so you can scan
-    clearTimeout(exitTimer);
-    exitTimer = setTimeout(() => {
-      console.log('⏱️ Exiting after QR display timeout.');
-      process.exit(0);
-    }, 120000); // give 2 minutes to scan
+    // No automatic exit; the script will keep running until manually stopped
   }
+}
 }
 
