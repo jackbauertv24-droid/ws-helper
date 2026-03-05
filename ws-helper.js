@@ -4,6 +4,9 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const qrcode = require('qrcode-terminal');
 const { useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
+require('dotenv').config();
+const safeSenders = process.env.SAFE_SENDERS ? process.env.SAFE_SENDERS.split(',').map(s=>s.trim()) : [];
+
 
 // Top‑level flag to track whether we have already shown a QR code
 let qrPrinted = false;
@@ -49,11 +52,16 @@ async function start() {
   sock.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
       if (msg.key.fromMe) continue;
-      const remoteJid = msg.key.remoteJid;
-      console.log('📩 Received a message from', remoteJid);
-      console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
-      await sock.sendMessage(remoteJid, { text: 'Message received!' });
-      console.log('✅ Sent reply');
+const remoteJid = msg.key.remoteJid;
+    // Only respond to whitelisted senders
+    if (safeSenders.length && !safeSenders.includes(remoteJid)) {
+      console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
+      continue;
+    }
+    console.log('📩 Received a message from', remoteJid);
+    console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
+    await sock.sendMessage(remoteJid, { text: 'Message received!' });
+    console.log('✅ Sent reply');
     }
   });
 }
