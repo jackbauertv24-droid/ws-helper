@@ -56,19 +56,18 @@ async function start() {
       if (msg.key.fromMe) continue;
 const remoteJid = msg.key.remoteJid;
     // Only respond to whitelisted senders
-    if (safeSenders.length) {
-      let isSafe = false;
-      if (remoteJid.includes('s.whatsapp.net')) {
-        const jidNum = remoteJid.split('@')[0].replace(/[^0-9]/g, '');
-        isSafe = safeSenders.includes(jidNum);
-        console.log('🔍 Checking private chat sender:', jidNum, 'isSafe:', isSafe);
-      } else {
-        console.log('⚠️ Ignored non‑personal chat from', remoteJid);
-      }
-      if (!isSafe) {
-        console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
+    if (!remoteJid.includes('s.whatsapp.net')) {
+        console.log('⚠️ Ignored non‑personal chat', remoteJid);
         continue;
-      }
+    }
+    if (safeSenders.length) {
+        const jidNum = remoteJid.split('@')[0].replace(/[^0-9]/g, '');
+        const isSafe = safeSenders.includes(jidNum);
+        console.log('🔍 Checking private chat sender:', jidNum, 'isSafe:', isSafe);
+        if (!isSafe) {
+            console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
+            continue;
+        }
     }
     console.log('📩 Received a message from', remoteJid);
     console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
