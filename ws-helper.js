@@ -27,7 +27,7 @@ async function start() {
     qrPrinted = true;
   });
 
-  sock.ev.on('connection.update', ({connection, lastDisconnect, qr}) => {
+  sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
     if (qr) {
       console.log('\n📱 QR from connection.update:');
       qrcode.generate(qr, { small: true });
@@ -43,7 +43,7 @@ async function start() {
     }
   });
 
-  sock.ev.on('messages.upsert', async ({messages}) => {
+  sock.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
       if (msg.key.fromMe) continue;
       const remoteJid = msg.key.remoteJid;
@@ -54,8 +54,15 @@ async function start() {
       }
       console.log('📩 Received a message from', remoteJid);
       console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
-      await sock.sendMessage(remoteJid, {text: 'Message received!'});
+      await sock.sendMessage(remoteJid, { text: 'Message received!' });
       console.log('✅ Sent reply');
+    }
+  });
+
+  // Fallback listener to log any other message updates
+  sock.ev.on('messages.update', async ({ messages }) => {
+    for (const msg of messages) {
+      console.log('🔔 messages.update received', JSON.stringify(msg, null, 2));
     }
   });
 }
