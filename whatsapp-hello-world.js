@@ -2,6 +2,7 @@
 // Minimal Baileys “Hello, world!” demo – Node.js (CommonJS)
 
 const makeWASocket = require('@whiskeysockets/baileys').default;
+const qrcode = require('qrcode-terminal');
 const { useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 
 // Top‑level flag to track whether we have already shown a QR code
@@ -66,6 +67,8 @@ let exitTimer = setTimeout(() => {
 
 // If QR is printed, we can end early (user can scan manually)
 function handleQrPrinted(qr) {
+  // Render QR code in terminal using qrcode-terminal
+  qrcode.generate(qr, { small: true });
   if (!qrPrinted) {
     qrPrinted = true;
     console.log('✅ QR code displayed – you may scan it now.');
