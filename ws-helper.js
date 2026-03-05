@@ -3,7 +3,7 @@
 
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const qrcode = require('qrcode-terminal');
-const { useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
+const { useMultiFileAuthState, DisconnectReason, Browsers, downloadMediaMessage } = require('@whiskeysockets/baileys');
 require('dotenv').config();
 
 let qrPrinted = false;
@@ -69,25 +69,25 @@ async function start() {
 
       // Image
       if (m.imageMessage) {
-        const buffer = await sock.downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg);
         await saveBuffer(buffer, '.jpg', 'image');
         continue;
       }
       // Audio / voice note
       if (m.audioMessage) {
-        const buffer = await sock.downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg);
         await saveBuffer(buffer, '.ogg', 'audio');
         continue;
       }
       // Video
       if (m.videoMessage) {
-        const buffer = await sock.downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg);
         await saveBuffer(buffer, '.mp4', 'video');
         continue;
       }
       // Document
       if (m.documentMessage) {
-        const buffer = await sock.downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg);
         const mime = m.documentMessage.mimetype || 'application/octet-stream';
         const ext = mime.split('/')[1] ? `.${mime.split('/')[1]}` : '.bin';
         await saveBuffer(buffer, ext, 'document');
@@ -95,7 +95,7 @@ async function start() {
       }
       // Sticker (WebP)
       if (m.stickerMessage) {
-        const buffer = await sock.downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg);
         await saveBuffer(buffer, '.webp', 'sticker');
         continue;
       }
