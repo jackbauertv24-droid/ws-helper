@@ -10,6 +10,47 @@ const rawSafeSenders = process.env.SAFE_SENDERS ? process.env.SAFE_SENDERS.split
 const safeSenders = rawSafeSenders.map(s => s.replace(/[^\d]/g, ''));
 console.log('🛡️ Safe senders set to:', safeSenders);
 
+// -------------------------------------------------------------------
+// Resolve a phone number (PN) from any incoming JID (PN or LID)
+// -------------------------------------------------------------------
+async function resolvePhoneNumber(sock, jid) {
+  const { user, server } = jidDecode(jid);
+
+  // PN JID – direct phone number (without the leading '+')
+  if (server === 's.whatsapp.net') {
+    return user; // e.g. "85297778901"
+  }
+
+  // LID JID – try stored mapping first
+  if (server === 'lid') {
+    const stored = sock?.auth?.creds?.lidMap?.[jid];
+    if (stored) {
+      const { user: mapped } = jidDecode(stored);
+      console.log('🔄 Mapped LID to PN via stored mapping:', mapped);
+      return mapped;
+    }
+    // If no stored mapping, request contact info from WhatsApp
+    try {
+      const info = await sock.requestUserInfo(jid);
+      if (info?.wid) {
+        const { user: pn, server: srv } = jidDecode(info.wid);
+        if (srv === 's.whatsapp.net') {
+          console.log('🔄 Fetched PN via requestUserInfo:', pn);
+          // Optionally persist the new mapping for future look‑ups
+          // sock.auth?.creds?.lidMap = { ...sock.auth?.creds?.lidMap, [jid]: info.wid };
+          return pn;
+        }
+      }
+    } catch (e) {
+      console.log('⚠️ requestUserInfo failed for', jid, e);
+    }
+  }
+
+  console.log('⚠️ Unable to resolve phone number for JID:', jid);
+  return null;
+}
+
+
 
 // Top‑level flag to track whether we have already shown a QR code
 let qrPrinted = false;
@@ -63,33 +104,15 @@ const remoteJid = msg.key.remoteJid;
         console.log('⚠️ Ignored group or broadcast chat', remoteJid);
         continue;
     }
-    // Decode JID to extract phone number
-    const { user, server } = jidDecode(remoteJid);
-    let phoneNumber = null;
-    if (server === 's.whatsapp.net') {
-        phoneNumber = user; // phone number without +
-    } else if (server === 'lid') {
-        // Attempt to map LID to phone number using stored mapping (if available)
-        const mapped = sock.auth?.creds?.lidMap?.[remoteJid];
-        if (mapped) {
-            const { user: mappedUser } = jidDecode(mapped);
-            phoneNumber = mappedUser;
-            console.log('🔄 Mapped LID to phone number:', phoneNumber);
-        } else {
-            console.log('⚠️ No LID mapping available for', remoteJid);
-        }
-    } else {
-        console.log('⚠️ Unhandled JID domain:', server);
+    // Resolve phone number (PN) from any JID (PN or LID)
+    const phoneNumber = await resolvePhoneNumber(sock, remoteJid);
+    if (!phoneNumber) {
+        console.log('⚠️ Could not resolve phone number – ignoring message from', remoteJid);
+        continue;
     }
-    if (phoneNumber) {
-        const isSafe = safeSenders.includes(phoneNumber);
-        console.log('🔍 Checking sender phoneNumber:', phoneNumber, 'isSafe:', isSafe);
-        if (!isSafe) {
-            console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
-            continue;
-        }
-    } else {
-        console.log('⚠️ Unable to determine phone number for', remoteJid, '- ignoring.');
+    // Whitelist check
+    if (safeSenders.length && !safeSenders.includes(phoneNumber)) {
+        console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
         continue;
     }
     console.log('📩 Received a message from', remoteJid);
