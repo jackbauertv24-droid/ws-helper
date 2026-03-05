@@ -55,56 +55,48 @@ async function start() {
       const m = msg.message;
       if (!m) continue;
 
-      // Helper to download any media object
-      const downloadMedia = async (mediaObj, type) => {
+      // Helper to save a buffer to a file
+      const saveBuffer = async (buffer, ext, type) => {
         const fs = require('fs');
         const path = require('path');
         const dir = path.resolve(__dirname, 'downloads');
         if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-        const mime = mediaObj.mimetype || 'application/octet-stream';
-        const extMap = {
-          'image/jpeg': '.jpg',
-          'image/png': '.png',
-          'image/webp': '.webp',
-          'audio/ogg; codecs=opus': '.ogg',
-          'video/mp4': '.mp4'
-        };
-        const ext = extMap[mime] || `.${mime.split('/')[1] || 'bin'}`;
         const filename = `${Date.now()}_${type}${ext}`;
         const filePath = path.join(dir, filename);
-        const stream = await sock.downloadContentFromMessage(mediaObj, type);
-        await new Promise((resolve, reject) => {
-          const out = fs.createWriteStream(filePath);
-          stream.pipe(out);
-          out.on('finish', resolve);
-          out.on('error', reject);
-        });
+        fs.writeFileSync(filePath, buffer);
         console.log(`💾 Saved ${type} to ${filePath}`);
       };
 
       // Image
       if (m.imageMessage) {
-        await downloadMedia(m.imageMessage, 'image');
+        const buffer = await sock.downloadMediaMessage(msg);
+        await saveBuffer(buffer, '.jpg', 'image');
         continue;
       }
       // Audio / voice note
       if (m.audioMessage) {
-        await downloadMedia(m.audioMessage, 'audio');
+        const buffer = await sock.downloadMediaMessage(msg);
+        await saveBuffer(buffer, '.ogg', 'audio');
         continue;
       }
       // Video
       if (m.videoMessage) {
-        await downloadMedia(m.videoMessage, 'video');
+        const buffer = await sock.downloadMediaMessage(msg);
+        await saveBuffer(buffer, '.mp4', 'video');
         continue;
       }
-      // Document / file
+      // Document
       if (m.documentMessage) {
-        await downloadMedia(m.documentMessage, 'document');
+        const buffer = await sock.downloadMediaMessage(msg);
+        const mime = m.documentMessage.mimetype || 'application/octet-stream';
+        const ext = mime.split('/')[1] ? `.${mime.split('/')[1]}` : '.bin';
+        await saveBuffer(buffer, ext, 'document');
         continue;
       }
-      // Sticker (treated as image)
+      // Sticker (WebP)
       if (m.stickerMessage) {
-        await downloadMedia(m.stickerMessage, 'sticker');
+        const buffer = await sock.downloadMediaMessage(msg);
+        await saveBuffer(buffer, '.webp', 'sticker');
         continue;
       }
     }
