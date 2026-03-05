@@ -45,44 +45,102 @@ async function start() {
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msgArray = Array.isArray(messages) ? messages : [messages];
-    for (const msg of msgArray) {
-      if (msg.key.fromMe) continue;
-      const remoteJid = msg.key.remoteJid;
+for (const msg of msgArray) {
+          if (msg.key.fromMe) continue;
+          const remoteJid = msg.key.remoteJid;
 
-      console.log('📩 Received a message from', remoteJid);
-      console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
+          console.log('📩 Received a message from', remoteJid);
+          console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
 
-      const m = msg.message;
-      if (!m) continue;
+          const m = msg.message;
+          if (!m) continue;
 
-      // Helper to save a buffer to a file
-      const saveBuffer = async (buffer, ext, type) => {
-        const fs = require('fs');
-        const path = require('path');
-        const dir = path.resolve(__dirname, 'downloads');
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-        const filename = `${Date.now()}_${type}${ext}`;
-        const filePath = path.join(dir, filename);
-        fs.writeFileSync(filePath, buffer);
-        console.log(`💾 Saved ${type} to ${filePath}`);
-      };
+          // If the message is a plain text conversation matching "How are you", reply.
+          if (m.conversation && m.conversation.trim() === 'How are you') {
+            await sock.sendMessage(remoteJid, { text: "I'm fine, thank you" }, { quoted: msg });
+            console.log('🤖 Sent automatic reply to', remoteJid);
+            // Continue to next message (no media handling needed)
+            continue;
+          }
+
+          // Helper to save a buffer to a file
+          const saveMedia = async (data, ext, type) => {
+            const fs = require('fs');
+            const path = require('path');
+            const dir = path.resolve(__dirname, 'downloads');
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+            const filename = `${Date.now()}_${type}${ext}`;
+            const filePath = path.join(dir, filename);
+            if (Buffer.isBuffer(data)) {
+              await fs.promises.writeFile(filePath, data);
+            } else if (data && typeof data.pipe === 'function') {
+              await new Promise((resolve, reject) => {
+                const writeStream = fs.createWriteStream(filePath);
+                data.pipe(writeStream)
+                  .on('finish', resolve)
+                  .on('error', reject);
+              });
+            } else {
+              console.warn('⚠️ Unknown media data type, skipping save');
+              return;
+            }
+            console.log(`💾 Saved ${type} to ${filePath}`);
+          };
+
+        // Image
+        if (m.imageMessage) {
+          const buffer = await downloadMediaMessage(msg, 'buffer');
+          await saveMedia(buffer, '.jpg', 'image');
+          continue;
+        }
+        // Audio / voice note
+        if (m.audioMessage) {
+          const buffer = await downloadMediaMessage(msg, 'buffer');
+          await saveMedia(buffer, '.ogg', 'audio');
+          continue;
+        }
+        // Video
+        if (m.videoMessage) {
+          const buffer = await downloadMediaMessage(msg, 'buffer');
+          await saveMedia(buffer, '.mp4', 'video');
+          continue;
+        }
+        // Document
+        if (m.documentMessage) {
+          const buffer = await downloadMediaMessage(msg, 'buffer');
+          const mime = m.documentMessage.mimetype || 'application/octet-stream';
+          const ext = mime.split('/')[1] ? `.${mime.split('/')[1]}` : '.bin';
+          await saveMedia(buffer, ext, 'document');
+          continue;
+        }
+        // Sticker (WebP)
+        if (m.stickerMessage) {
+          const buffer = await downloadMediaMessage(msg, 'buffer');
+          await saveMedia(buffer, '.webp', 'sticker');
+          continue;
+        }
+      }
+    }
+
+          console.log(`💾 Saved ${type} to ${filePath}`);
+        };
 
       // Image
       if (m.imageMessage) {
         const buffer = await downloadMediaMessage(msg, 'buffer');
-        await saveBuffer(buffer, '.jpg', 'image');
+        await saveMedia(buffer, '.jpg', 'image');
         continue;
       }
       // Audio / voice note
       if (m.audioMessage) {
         const buffer = await downloadMediaMessage(msg, 'buffer');
-        await saveBuffer(buffer, '.ogg', 'audio');
+        await saveMedia(buffer, '.ogg', 'audio');
         continue;
       }
       // Video
       if (m.videoMessage) {
         const buffer = await downloadMediaMessage(msg, 'buffer');
-        await saveBuffer(buffer, '.mp4', 'video');
+        await saveMedia(buffer, '.mp4', 'video');
         continue;
       }
       // Document
@@ -90,13 +148,13 @@ async function start() {
         const buffer = await downloadMediaMessage(msg, 'buffer');
         const mime = m.documentMessage.mimetype || 'application/octet-stream';
         const ext = mime.split('/')[1] ? `.${mime.split('/')[1]}` : '.bin';
-        await saveBuffer(buffer, ext, 'document');
+        await saveMedia(buffer, ext, 'document');
         continue;
       }
       // Sticker (WebP)
       if (m.stickerMessage) {
         const buffer = await downloadMediaMessage(msg, 'buffer');
-        await saveBuffer(buffer, '.webp', 'sticker');
+        await saveMedia(buffer, '.webp', 'sticker');
         continue;
       }
     }
