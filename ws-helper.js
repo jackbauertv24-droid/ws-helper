@@ -48,8 +48,65 @@ async function start() {
     for (const msg of msgArray) {
       if (msg.key.fromMe) continue;
       const remoteJid = msg.key.remoteJid;
+
       console.log('📩 Received a message from', remoteJid);
       console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
+
+      const m = msg.message;
+      if (!m) continue;
+
+      // Helper to download any media object
+      const downloadMedia = async (mediaObj, type) => {
+        const fs = require('fs');
+        const path = require('path');
+        const dir = path.resolve(__dirname, 'downloads');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+        const mime = mediaObj.mimetype || 'application/octet-stream';
+        const extMap = {
+          'image/jpeg': '.jpg',
+          'image/png': '.png',
+          'image/webp': '.webp',
+          'audio/ogg; codecs=opus': '.ogg',
+          'video/mp4': '.mp4'
+        };
+        const ext = extMap[mime] || `.${mime.split('/')[1] || 'bin'}`;
+        const filename = `${Date.now()}_${type}${ext}`;
+        const filePath = path.join(dir, filename);
+        const stream = await sock.downloadContentFromMessage(mediaObj, type);
+        await new Promise((resolve, reject) => {
+          const out = fs.createWriteStream(filePath);
+          stream.pipe(out);
+          out.on('finish', resolve);
+          out.on('error', reject);
+        });
+        console.log(`💾 Saved ${type} to ${filePath}`);
+      };
+
+      // Image
+      if (m.imageMessage) {
+        await downloadMedia(m.imageMessage, 'image');
+        continue;
+      }
+      // Audio / voice note
+      if (m.audioMessage) {
+        await downloadMedia(m.audioMessage, 'audio');
+        continue;
+      }
+      // Video
+      if (m.videoMessage) {
+        await downloadMedia(m.videoMessage, 'video');
+        continue;
+      }
+      // Document / file
+      if (m.documentMessage) {
+        await downloadMedia(m.documentMessage, 'document');
+        continue;
+      }
+      // Sticker (treated as image)
+      if (m.stickerMessage) {
+        await downloadMedia(m.stickerMessage, 'sticker');
+        continue;
+      }
     }
   });
 
