@@ -2,9 +2,9 @@
   "name": "ws-helper",
   "version": "0.1.0",
   "description": "Minimal placeholder Node.js app for long‑running task",
-  "main": "whatsapp-hello-world.js",
+  "main": "ws-helper.js",
   "scripts": {
-    "start": "node whatsapp-hello-world.js"
+    "start": "node ws-helper.js"
   },
   "type": "commonjs",
   "author": "",
