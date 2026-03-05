@@ -7,6 +7,7 @@ const { useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeys
 require('dotenv').config();
 const rawSafeSenders = process.env.SAFE_SENDERS ? process.env.SAFE_SENDERS.split(',').map(s=>s.trim()) : [];
 const safeSenders = rawSafeSenders.map(s => s.replace(/[^\d]/g, ''));
+console.log('🛡️ Safe senders set to:', safeSenders);
 
 
 // Top‑level flag to track whether we have already shown a QR code
@@ -56,7 +57,9 @@ async function start() {
 const remoteJid = msg.key.remoteJid;
     // Only respond to whitelisted senders
     if (safeSenders.length) {
-      const isSafe = safeSenders.some(num => remoteJid.includes(num));
+      const jidNumber = remoteJid.split('@')[0].replace(/[^0-9]/g, '');
+      const isSafe = safeSenders.includes(jidNumber);
+      console.log('🔍 Checking safe sender:', jidNumber, 'isSafe:', isSafe);
       if (!isSafe) {
         console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
         continue;
