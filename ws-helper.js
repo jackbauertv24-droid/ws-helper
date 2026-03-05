@@ -5,7 +5,8 @@ const makeWASocket = require('@whiskeysockets/baileys').default;
 const qrcode = require('qrcode-terminal');
 const { useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 require('dotenv').config();
-const safeSenders = process.env.SAFE_SENDERS ? process.env.SAFE_SENDERS.split(',').map(s=>s.trim()) : [];
+const rawSafeSenders = process.env.SAFE_SENDERS ? process.env.SAFE_SENDERS.split(',').map(s=>s.trim()) : [];
+const safeSenders = rawSafeSenders.map(s => s.replace(/[^\d]/g, ''));
 
 
 // Top‑level flag to track whether we have already shown a QR code
@@ -54,9 +55,12 @@ async function start() {
       if (msg.key.fromMe) continue;
 const remoteJid = msg.key.remoteJid;
     // Only respond to whitelisted senders
-    if (safeSenders.length && !safeSenders.includes(remoteJid)) {
-      console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
-      continue;
+    if (safeSenders.length) {
+      const isSafe = safeSenders.some(num => remoteJid.includes(num));
+      if (!isSafe) {
+        console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
+        continue;
+      }
     }
     console.log('📩 Received a message from', remoteJid);
     console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
