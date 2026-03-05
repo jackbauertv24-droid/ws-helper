@@ -1,16 +1,25 @@
 # ws-helper
 
-A minimal Node.js placeholder application that starts, prints a message, and then simulates a **long‑running task**. This repo can be used as a scaffold for services that need to stay alive (e.g., background workers, servers, cron jobs).
+A minimal Node.js application that connects to WhatsApp using Baileys.
+It prints a QR code for initial authentication, saves the session for future runs, logs incoming messages, and replies with a simple acknowledgment.
 
-## Scripts
+## Setup
 
-- `npm install` Install (no dependencies required).
-- `npm start` Run the placeholder. You should see:
-  ```
-  🚀 Placeholder app started
-  ⏳ Long‑running task started…
-  ```
-  The process will then stay alive until you stop it with `Ctrl‑C`.
+```bash
+npm install
+# copy .env.example to .env and fill in your OWNER_JID (optional)
+```
+
+## Running
+
+```bash
+npm start
+```
+
+On first run, scan the QR code displayed in the terminal with WhatsApp. Subsequent runs will reuse the saved session.
+
+The bot will log each incoming message and reply with “Message received!”.
 
 ## License
+
 MIT
