@@ -125,10 +125,16 @@ for (const msg of msgArray) {
   });
 
   // Fallback listener to log any other message updates
-sock.ev.on('messages.update', async ({ messages }) => {
+sock.ev.on('messages.update', async (update) => {
+      console.log('🔔 messages.update raw payload', JSON.stringify(update, null, 2));
+      const messages = update?.messages;
+      if (!messages) {
+        console.warn('⚠️ messages.update payload has no messages field');
+        return;
+      }
       const msgs = Array.isArray(messages) ? messages : [messages];
       for (const msg of msgs) {
-        console.log('🔔 messages.update received', JSON.stringify(msg, null, 2));
+        console.log('🔔 messages.update processed', JSON.stringify(msg, null, 2));
       }
     });
 }
