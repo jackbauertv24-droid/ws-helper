@@ -37,7 +37,7 @@ async function resolvePhoneNumber(sock, jid) {
          console.log('⚠️ No PN mapping received for LID', jid);
          resolve(null);
        }, 8000);
-       const onContact = ({ contacts }) => {
+       const onContact = (contacts) => {
          for (const c of contacts) {
            if (c.id === jid && c.jid) {
              const { user: pn } = jidDecode(c.jid);
