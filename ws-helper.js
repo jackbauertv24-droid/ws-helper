@@ -84,43 +84,7 @@ for (const msg of msgArray) {
               console.warn('⚠️ Unknown media data type, skipping save');
               return;
             }
-            console.log(`💾 Saved ${type} to ${filePath}`);
-          };
 
-        // Image
-        if (m.imageMessage) {
-          const buffer = await downloadMediaMessage(msg, 'buffer');
-          await saveMedia(buffer, '.jpg', 'image');
-          continue;
-        }
-        // Audio / voice note
-        if (m.audioMessage) {
-          const buffer = await downloadMediaMessage(msg, 'buffer');
-          await saveMedia(buffer, '.ogg', 'audio');
-          continue;
-        }
-        // Video
-        if (m.videoMessage) {
-          const buffer = await downloadMediaMessage(msg, 'buffer');
-          await saveMedia(buffer, '.mp4', 'video');
-          continue;
-        }
-        // Document
-        if (m.documentMessage) {
-          const buffer = await downloadMediaMessage(msg, 'buffer');
-          const mime = m.documentMessage.mimetype || 'application/octet-stream';
-          const ext = mime.split('/')[1] ? `.${mime.split('/')[1]}` : '.bin';
-          await saveMedia(buffer, ext, 'document');
-          continue;
-        }
-        // Sticker (WebP)
-        if (m.stickerMessage) {
-          const buffer = await downloadMediaMessage(msg, 'buffer');
-          await saveMedia(buffer, '.webp', 'sticker');
-          continue;
-        }
-      }
-    }
 
           console.log(`💾 Saved ${type} to ${filePath}`);
         };
