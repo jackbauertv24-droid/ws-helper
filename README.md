@@ -8,6 +8,7 @@ It prints a QR code for initial authentication, saves the session for future run
 ```bash
 npm install
 # copy .env.example to .env and fill in your OWNER_JID (optional)
+# optionally set SAFE_SENDERS as a comma‑separated list of allowed JIDs
 ```
 
 ## Running
