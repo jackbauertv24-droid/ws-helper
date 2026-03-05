@@ -21,30 +21,37 @@ async function resolvePhoneNumber(sock, jid) {
     return user; // e.g. "85297778901"
   }
 
-  // LID JID – try stored mapping first
-  if (server === 'lid') {
-    const stored = sock?.auth?.creds?.lidMap?.[jid];
-    if (stored) {
-      const { user: mapped } = jidDecode(stored);
-      console.log('🔄 Mapped LID to PN via stored mapping:', mapped);
-      return mapped;
-    }
-    // If no stored mapping, request contact info from WhatsApp
-    try {
-      const info = await sock.requestUserInfo(jid);
-      if (info?.wid) {
-        const { user: pn, server: srv } = jidDecode(info.wid);
-        if (srv === 's.whatsapp.net') {
-          console.log('🔄 Fetched PN via requestUserInfo:', pn);
-          // Optionally persist the new mapping for future look‑ups
-          // sock.auth?.creds?.lidMap = { ...sock.auth?.creds?.lidMap, [jid]: info.wid };
-          return pn;
-        }
-      }
-    } catch (e) {
-      console.log('⚠️ requestUserInfo failed for', jid, e);
-    }
-  }
+   // LID JID – try stored mapping first
+   if (server === 'lid') {
+     const stored = sock?.auth?.creds?.lidMap?.[jid];
+     if (stored) {
+       const { user: mapped } = jidDecode(stored);
+       console.log('🔄 Mapped LID to PN via stored mapping:', mapped);
+       return mapped;
+     }
+     // If mapping not yet known, wait for Baileys to emit a contacts.update
+     // that contains the PN for this LID. Listen once with a timeout.
+     return new Promise(resolve => {
+       const timeout = setTimeout(() => {
+         sock.ev.off('contacts.update', onContact);
+         console.log('⚠️ No PN mapping received for LID', jid);
+         resolve(null);
+       }, 8000);
+       const onContact = ({ contacts }) => {
+         for (const c of contacts) {
+           if (c.id === jid && c.jid) {
+             const { user: pn } = jidDecode(c.jid);
+             console.log('🔄 Received PN via contacts.update:', pn);
+             clearTimeout(timeout);
+             sock.ev.off('contacts.update', onContact);
+             resolve(pn);
+             return;
+           }
+         }
+       };
+       sock.ev.on('contacts.update', onContact);
+     });
+   }
 
   console.log('⚠️ Unable to resolve phone number for JID:', jid);
   return null;
