@@ -2,7 +2,7 @@
 
 A minimal Node.js application that connects to WhatsApp using Baileys.
 It prints a QR code for initial authentication, saves the session for future runs, and logs incoming messages.
-The bot also automatically downloads any received media (images, audio, video, documents, stickers) to the `downloads/` folder.
+The bot also automatically downloads any received media (images, audio, video, documents, stickers) to the `downloads/` folder. It can also programmatically **star** important messages using the Baileys `chatModify` API.
 It does **not** send an automatic reply.
 
 ## Setup
