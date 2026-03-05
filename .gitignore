@@ -4,5 +4,7 @@ package-lock.json
 auth_info_baileys/
 
 download/
+ws-helper.log
+ws-helper.pid
 
 auth/
