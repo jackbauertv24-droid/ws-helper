@@ -44,7 +44,8 @@ async function start() {
   });
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
-    for (const msg of messages) {
+    const msgArray = Array.isArray(messages) ? messages : [messages];
+    for (const msg of msgArray) {
       if (msg.key.fromMe) continue;
       const remoteJid = msg.key.remoteJid;
       console.log('📩 Received a message from', remoteJid);
