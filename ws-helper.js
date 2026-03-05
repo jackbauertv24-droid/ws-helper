@@ -55,8 +55,10 @@ async function start() {
     for (const msg of messages) {
       if (msg.key.fromMe) continue;
 const remoteJid = msg.key.remoteJid;
-    // Only respond to whitelisted senders
-    if (!remoteJid.includes('s.whatsapp.net')) {
+    // Debug remoteJid
+    console.log('🔎 Debug remoteJid:', remoteJid);
+    // Only respond to personal chats (s.whatsapp.net or c.us)
+    if (!remoteJid.includes('s.whatsapp.net') && !remoteJid.includes('c.us')) {
         console.log('⚠️ Ignored non‑personal chat', remoteJid);
         continue;
     }
