@@ -51,6 +51,7 @@ async function start() {
       if (msg.key.fromMe) continue;
       const remoteJid = msg.key.remoteJid;
       console.log('📩 Received a message from', remoteJid);
+      console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
       await sock.sendMessage(remoteJid, { text: 'Hello, world!' });
       console.log('✅ Sent reply "Hello, world!"');
     }
@@ -67,7 +68,7 @@ function handleQrPrinted(qr) {
     qrPrinted = true;
     console.log('✅ QR code displayed – you may scan it now.');
     // No automatic exit; the script will keep running until manually stopped
-  }
 }
+
 }
 
