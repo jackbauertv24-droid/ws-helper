@@ -57,15 +57,16 @@ async function start() {
 const remoteJid = msg.key.remoteJid;
     // Debug remoteJid
     console.log('🔎 Debug remoteJid:', remoteJid);
-    // Only respond to personal chats (s.whatsapp.net or c.us)
-    if (!remoteJid.includes('s.whatsapp.net') && !remoteJid.includes('c.us')) {
-        console.log('⚠️ Ignored non‑personal chat', remoteJid);
+    // Ignore group or broadcast chats
+    if (remoteJid.endsWith('@g.us') || remoteJid.endsWith('@broadcast')) {
+        console.log('⚠️ Ignored group or broadcast chat', remoteJid);
         continue;
     }
+    // Extract digits from JID
+    const digits = remoteJid.replace(/\D/g, '');
     if (safeSenders.length) {
-        const jidNum = remoteJid.split('@')[0].replace(/[^0-9]/g, '');
-        const isSafe = safeSenders.includes(jidNum);
-        console.log('🔍 Checking private chat sender:', jidNum, 'isSafe:', isSafe);
+        const isSafe = safeSenders.some(num => digits.includes(num));
+        console.log('🔍 Checking sender digits:', digits, 'isSafe:', isSafe);
         if (!isSafe) {
             console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
             continue;
