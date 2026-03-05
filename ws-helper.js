@@ -1,5 +1,5 @@
-// whatsapp-hello-world.js
-// Minimal Baileys “Hello, world!” demo – Node.js (CommonJS)
+// ws-helper.js
+// Minimal Baileys demo – Node.js (CommonJS)
 
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const qrcode = require('qrcode-terminal');
@@ -16,7 +16,7 @@ async function start() {
     
     auth: state,
     printQRInTerminal: false,
-    browser: Browsers.ubuntu('Baileys-Hello-World'),
+    browser: Browsers.ubuntu('Baileys-Helper'),
   });
 
   sock.ev.on('creds.update', saveCreds);
@@ -52,8 +52,8 @@ async function start() {
       const remoteJid = msg.key.remoteJid;
       console.log('📩 Received a message from', remoteJid);
       console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
-      await sock.sendMessage(remoteJid, { text: 'Hello, world!' });
-      console.log('✅ Sent reply "Hello, world!"');
+      await sock.sendMessage(remoteJid, { text: 'Message received!' });
+      console.log('✅ Sent reply');
     }
   });
 }
