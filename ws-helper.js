@@ -69,25 +69,25 @@ async function start() {
 
       // Image
       if (m.imageMessage) {
-        const buffer = await downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg, 'buffer');
         await saveBuffer(buffer, '.jpg', 'image');
         continue;
       }
       // Audio / voice note
       if (m.audioMessage) {
-        const buffer = await downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg, 'buffer');
         await saveBuffer(buffer, '.ogg', 'audio');
         continue;
       }
       // Video
       if (m.videoMessage) {
-        const buffer = await downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg, 'buffer');
         await saveBuffer(buffer, '.mp4', 'video');
         continue;
       }
       // Document
       if (m.documentMessage) {
-        const buffer = await downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg, 'buffer');
         const mime = m.documentMessage.mimetype || 'application/octet-stream';
         const ext = mime.split('/')[1] ? `.${mime.split('/')[1]}` : '.bin';
         await saveBuffer(buffer, ext, 'document');
@@ -95,7 +95,7 @@ async function start() {
       }
       // Sticker (WebP)
       if (m.stickerMessage) {
-        const buffer = await downloadMediaMessage(msg);
+        const buffer = await downloadMediaMessage(msg, 'buffer');
         await saveBuffer(buffer, '.webp', 'sticker');
         continue;
       }
