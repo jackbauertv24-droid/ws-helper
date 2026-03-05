@@ -4,6 +4,7 @@
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const qrcode = require('qrcode-terminal');
 const { useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
+const { jidDecode } = require('@whiskeysockets/baileys/lib/WABinary/jid-utils');
 require('dotenv').config();
 const rawSafeSenders = process.env.SAFE_SENDERS ? process.env.SAFE_SENDERS.split(',').map(s=>s.trim()) : [];
 const safeSenders = rawSafeSenders.map(s => s.replace(/[^\d]/g, ''));
@@ -62,15 +63,34 @@ const remoteJid = msg.key.remoteJid;
         console.log('⚠️ Ignored group or broadcast chat', remoteJid);
         continue;
     }
-    // Extract digits from JID
-    const digits = remoteJid.replace(/\D/g, '');
-    if (safeSenders.length) {
-        const isSafe = safeSenders.some(num => digits.includes(num));
-        console.log('🔍 Checking sender digits:', digits, 'isSafe:', isSafe);
+    // Decode JID to extract phone number
+    const { user, server } = jidDecode(remoteJid);
+    let phoneNumber = null;
+    if (server === 's.whatsapp.net') {
+        phoneNumber = user; // phone number without +
+    } else if (server === 'lid') {
+        // Attempt to map LID to phone number using stored mapping (if available)
+        const mapped = sock.auth?.creds?.lidMap?.[remoteJid];
+        if (mapped) {
+            const { user: mappedUser } = jidDecode(mapped);
+            phoneNumber = mappedUser;
+            console.log('🔄 Mapped LID to phone number:', phoneNumber);
+        } else {
+            console.log('⚠️ No LID mapping available for', remoteJid);
+        }
+    } else {
+        console.log('⚠️ Unhandled JID domain:', server);
+    }
+    if (phoneNumber) {
+        const isSafe = safeSenders.includes(phoneNumber);
+        console.log('🔍 Checking sender phoneNumber:', phoneNumber, 'isSafe:', isSafe);
         if (!isSafe) {
             console.log('⚠️ Ignored message from non‑safe sender', remoteJid);
             continue;
         }
+    } else {
+        console.log('⚠️ Unable to determine phone number for', remoteJid, '- ignoring.');
+        continue;
     }
     console.log('📩 Received a message from', remoteJid);
     console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
