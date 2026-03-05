@@ -1,0 +1,12 @@
+{
+  "name": "ws-helper",
+  "version": "0.1.0",
+  "description": "Minimal placeholder Node.js app for long‑running task",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "type": "commonjs",
+  "author": "",
+  "license": "MIT"
+}
