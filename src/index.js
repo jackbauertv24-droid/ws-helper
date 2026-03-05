@@ -5,7 +5,7 @@ const { startSocket, getQR } = require('./socket');
   try {
     await startSocket();
     console.log('🚀 WhatsApp gateway started. It will keep running until the process exits.');
-    console.log('📱 If you need the QR code for the first login, run:\n   node -e "console.log(require(\'./src/socket\').getQR())"');
+    console.log('📱 If this is the first run (no saved session), a QR code will be printed directly in the terminal. Scan it with WhatsApp to log in.');
   } catch (e) {
     console.error('Failed to start the gateway:', e);
     process.exit(1);

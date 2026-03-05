@@ -9,8 +9,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "baileys": "^7.0.0-rc.9",
+    "@adiwajshing/baileys": "^5.0.0",
     "dotenv": "^17.3.1",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "pino": "^9.2.0",
+    "qrcode-terminal": "^0.12.0"
   }
 }

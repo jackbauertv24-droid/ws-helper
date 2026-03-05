@@ -11,14 +11,17 @@ let qrDataUrl = null;   // latest QR code as data URL
 async function startSocket() {
   const { state, saveCreds } = await getAuthState();
 
+  const qrcode = require('qrcode-terminal');
   sock = makeWASocket({
     auth: state,
     logger: pino({ level: process.env.LOG_LEVEL || 'silent' }),
+    // When no stored auth is present, Baileys will provide a QR string.
+    // We render it in the terminal with qrcode-terminal.
     printQRInTerminal: false,
     qr: (qr) => {
-      const base64 = Buffer.from(qr).toString('base64');
-      qrDataUrl = `data:image/png;base64,${base64}`;
-      console.log('🔳 QR code generated – scan it with your WhatsApp client.');
+      // `qr` is a string (the QR code data). Use qrcode-terminal to display.
+      qrcode.generate(qr, { small: true });
+      console.log('🔳 Scan the above QR code with your WhatsApp client to log in.');
     },
   });
 
@@ -29,6 +32,10 @@ async function startSocket() {
   sock.ev.on('connection.update', async (update) => {
     console.log('⚡ connection.update:', update);
     await processEvent('connection.update', update);
+    // Friendly hint if the connection closes before a QR code can be shown
+    if (update.connection === 'close' && update.lastDisconnect?.error?.message.includes('Connection Failure')) {
+      console.error('❌ Connection to WhatsApp failed. Verify that the server has outbound access to the internet (port 443) and that no firewall blocks WhatsApp Web.');
+    }
   });
 
   // ----- Incoming messages -----
