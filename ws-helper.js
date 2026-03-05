@@ -47,15 +47,8 @@ async function start() {
     for (const msg of messages) {
       if (msg.key.fromMe) continue;
       const remoteJid = msg.key.remoteJid;
-      // Ignore groups and broadcasts
-      if (remoteJid.endsWith('@g.us') || remoteJid.endsWith('@broadcast')) {
-        console.log('⚠️ Ignored group or broadcast chat', remoteJid);
-        continue;
-      }
       console.log('📩 Received a message from', remoteJid);
       console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
-      await sock.sendMessage(remoteJid, { text: 'Message received!' });
-      console.log('✅ Sent reply');
     }
   });
 
