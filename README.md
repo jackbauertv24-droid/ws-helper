@@ -29,6 +29,26 @@ The project uses a `.env` file for optional configuration:
 - `LOG_LEVEL` – sets the logging level for the `pino` logger (`info`, `error`, etc.).
 - `SAFE_SENDERS` – a comma‑separated list of JIDs that are allowed to interact with the bot. The current code does not enforce this list yet, but it is documented for future enhancements.
 
+### External API integration (placeholder)
+
+The bot can forward a *masked* copy of every incoming WhatsApp message to an external HTTP endpoint. The endpoint URL is read from the environment variable `API_URL`.
+
+**Payload sent (all values are the literal string `[MASKED]`):**
+```json
+{
+  "whatsappMessage": { /* same shape as the original Baileys message, but every value is "[MASKED]" */ },
+  "receivedAt": "2026-03-05T12:34:56.789Z"
+}
+```
+
+The response body is currently ignored, but if the JSON contains the boolean flag `"replyToOriginal": true` the bot will send its automatic reply back to the original sender instead of to its own number.
+
+**Configuration**
+```env
+API_URL=https://httpbin.org/post   # replace with your real webhook when ready
+```
+
+
 
 
 On first run, scan the QR code displayed in the terminal with WhatsApp. Subsequent runs will reuse the saved session.

@@ -6,6 +6,25 @@ const qrcode = require('qrcode-terminal');
 const { useMultiFileAuthState, DisconnectReason, Browsers, downloadMediaMessage } = require('@whiskeysockets/baileys');
 require('dotenv').config();
 
+/**
+ * Returns a shallow copy of an object where every value is replaced by "[MASKED]".
+ * Nested objects/arrays are also masked recursively.
+ */
+function maskObject(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(() => '[MASKED]');
+  }
+  if (obj && typeof obj === 'object') {
+    const masked = {};
+    for (const key of Object.keys(obj)) {
+      masked[key] = maskObject(obj[key]); // recurse
+    }
+    return masked;
+  }
+  // Primitive values (string, number, boolean, null, undefined)
+  return '[MASKED]';
+}
+
 let qrPrinted = false;
 
 async function start() {
@@ -47,7 +66,62 @@ async function start() {
     const msgArray = Array.isArray(messages) ? messages : [messages];
 for (const msg of msgArray) {
           if (msg.key.fromMe) continue;
-          const remoteJid = msg.key.remoteJid;
+           const remoteJid = msg.key.remoteJid;
+           
+           // ------------------------------------------------------------
+           // 1️⃣ Build a *masked* payload (do NOT expose real WhatsApp data)
+           // ------------------------------------------------------------
+           const maskedPayload = {
+             // Preserve the original structure – everything inside is replaced with "[MASKED]"
+             whatsappMessage: maskObject(msg),
+             // Keep a timestamp (useful for debugging) – also masked for consistency
+             receivedAt: new Date().toISOString(),
+           };
+           
+           // ------------------------------------------------------------
+           // 2️⃣ POST the payload to the placeholder endpoint (httpbin)
+           // ------------------------------------------------------------
+           const API_URL = process.env.API_URL; // e.g. https://httpbin.org/post
+           if (API_URL) {
+             try {
+               const httpRes = await fetch(API_URL, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 // The body is the *masked* JSON – safe to send anywhere
+                 body: JSON.stringify(maskedPayload),
+                 // Abort after 8 seconds (Node ≥ 18)
+                 signal: AbortSignal.timeout(8000),
+               });
+           
+               // ------------------------------------------------------------
+               // 3️⃣ (Future‑proof) Read a tiny flag that could override reply target
+               // ------------------------------------------------------------
+               let replyToOriginal = false; // default = reply to bot's own JID
+               try {
+                 // httpbin will echo the request back under the `json` key.
+                 // In a real service we expect a top‑level boolean `replyToOriginal`.
+                 const respJson = await httpRes.json();
+                 if (respJson && respJson.replyToOriginal === true) {
+                   replyToOriginal = true;
+                 }
+               } catch (_) {
+                 // If parsing fails, just keep the default behaviour.
+               }
+           
+               // ------------------------------------------------------------
+               // 4️⃣ Send the automatic self‑reply (or reply‑to‑original if flagged)
+               // ------------------------------------------------------------
+               const targetJid = replyToOriginal ? remoteJid : (sock.user?.jid ?? remoteJid);
+               const replyText = '✅ Automated self‑reply (placeholder)';
+           
+               await sock.sendMessage(targetJid, { text: replyText }, { quoted: msg });
+               console.log(`🤖 Sent ${replyToOriginal ? 'original‑sender' : 'self'} reply`);
+             } catch (err) {
+               console.error('❌ Failed to call external API:', err.message);
+             }
+           } else {
+             console.warn('⚠️ API_URL not configured – skipping external call');
+           }
 
           console.log('📩 Received a message from', remoteJid);
           console.log('🗒️ Full message:', JSON.stringify(msg, null, 2));
