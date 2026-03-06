@@ -137,7 +137,11 @@ let targetJid;
             if (!targetJid) {
               console.warn('⚠️ No target JID for self‑reply; skipping send.');
             } else {
+              if (replyToOriginal) {
               await sock.sendMessage(targetJid, { text: replyText }, { quoted: msg });
+            } else {
+              await sock.sendMessage(targetJid, { text: replyText });
+            }
               console.log(`🤖 Sent ${replyToOriginal ? 'original‑sender' : 'self'} reply`);
             }
              } catch (err) {
