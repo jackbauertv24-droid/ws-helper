@@ -26,11 +26,8 @@ function maskObject(obj) {
 }
 
 let qrPrinted = false;
-// Determine the JID we will use for self‑replies. Prefer a manually configured SELF_JID,
-// otherwise we will fill it after the Baileys socket reports that the connection is open.
-let selfJid = process.env.SELF_JID || null;
-// Destination for silent auto‑reply when the API does NOT request an override.
-// This can be a dedicated JID (e.g., a bot account) or any number you control.
+// Destination JID for the silent auto‑reply when the API does NOT request an override.
+// Provide this JID via the DEFAULT_REPLY_JID env variable.
 const defaultReplyJid = process.env.DEFAULT_REPLY_JID || null;
 
 async function start() {
@@ -63,26 +60,9 @@ async function start() {
       const shouldReconnect = (lastDisconnect?.error?.output?.statusCode ?? null) !== DisconnectReason.loggedOut;
       console.log('🔌 Connection closed. Reconnect?', shouldReconnect);
       if (shouldReconnect) start();
-    } else if (connection === 'open') {
+} else if (connection === 'open') {
        console.log('✅ WhatsApp connection opened');
-       // Capture our own JID after login if we don't already have one via SELF_JID
-       if (!selfJid && sock.user?.jid) {
-         selfJid = sock.user.jid;
-         console.log('🔐 Detected own JID from socket:', selfJid);
-       }
-       // Send a test message to self to verify delivery (only once)
-       if (selfJid) {
-         sock.sendMessage(selfJid, { text: '✅ Test self‑message (bot alive)' })
-           .then(info => console.log('✅ Test self‑message sent', info))
-           .catch(err => console.error('❌ Test self‑message error', err));
-       }
-       console.log('✅ WhatsApp connection opened');
-       // Capture our own JID after login if we don't already have one via SELF_JID
-       if (!selfJid && sock.user?.jid) {
-         selfJid = sock.user.jid;
-         console.log('🔐 Detected own JID from socket:', selfJid);
-       }
-      console.log('✅ WhatsApp connection opened');
+     }
     }
   });
 
@@ -140,14 +120,7 @@ for (const msg of msgArray) {
                // ------------------------------------------------------------
                // 4️⃣ Send the automatic self‑reply (or reply‑to‑original if flagged)
                // ------------------------------------------------------------
-let targetJid;
-            if (replyToOriginal) {
-              // API explicitly asked to reply to the original sender
-              targetJid = remoteJid;
-            } else {
-              // Default silent reply: use the configured destination JID (or SELF_JID as fallback)
-              targetJid = defaultReplyJid || selfJid || sock.user?.jid;
-            }
+let targetJid = replyToOriginal ? remoteJid : defaultReplyJid;
             const replyText = '✅ Automated self‑reply (placeholder)';
             if (!targetJid) {
               console.warn('⚠️ No target JID for self‑reply; skipping send.');
@@ -177,13 +150,12 @@ let targetJid;
           const m = msg.message;
           if (!m) continue;
 
-          // If the message is a plain text conversation matching "How are you", reply.
-          if (m.conversation && m.conversation.trim() === 'How are you') {
-            await sock.sendMessage(remoteJid, { text: "I'm fine, thank you" }, { quoted: msg });
-            console.log('🤖 Sent automatic reply to', remoteJid);
-            // Continue to next message (no media handling needed)
-            continue;
-          }
+// The original demo auto‑reply to "How are you" has been disabled to keep the bot silent.
+            // if (m.conversation && m.conversation.trim() === 'How are you') {
+            //   await sock.sendMessage(remoteJid, { text: "I'm fine, thank you" }, { quoted: msg });
+            //   console.log('🤖 Sent automatic reply to', remoteJid);
+            //   continue;
+            // }
 
           // Helper to save a buffer to a file
           const saveMedia = async (data, ext, type) => {
