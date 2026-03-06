@@ -6,24 +6,7 @@ const qrcode = require('qrcode-terminal');
 const { useMultiFileAuthState, DisconnectReason, Browsers, downloadMediaMessage } = require('@whiskeysockets/baileys');
 require('dotenv').config();
 
-/**
- * Returns a shallow copy of an object where every value is replaced by "[MASKED]".
- * Nested objects/arrays are also masked recursively.
- */
-function maskObject(obj) {
-  if (Array.isArray(obj)) {
-    return obj.map(() => '[MASKED]');
-  }
-  if (obj && typeof obj === 'object') {
-    const masked = {};
-    for (const key of Object.keys(obj)) {
-      masked[key] = maskObject(obj[key]); // recurse
-    }
-    return masked;
-  }
-  // Primitive values (string, number, boolean, null, undefined)
-  return '[MASKED]';
-}
+
 
 let qrPrinted = false;
 // Destination JID for the silent auto‑reply when the API does NOT request an override.
@@ -60,9 +43,8 @@ async function start() {
       const shouldReconnect = (lastDisconnect?.error?.output?.statusCode ?? null) !== DisconnectReason.loggedOut;
       console.log('🔌 Connection closed. Reconnect?', shouldReconnect);
       if (shouldReconnect) start();
-} else if (connection === 'open') {
-       console.log('✅ WhatsApp connection opened');
-     }
+    } else if (connection === 'open') {
+      console.log('✅ WhatsApp connection opened');
     }
   });
 
@@ -75,14 +57,14 @@ for (const msg of msgArray) {
             // ------------------------------------------------------------
             // 1️⃣ Build a *masked* payload (do NOT expose real WhatsApp data)
             // ------------------------------------------------------------
-            const maskedPayload = {
-                // Preserve the original structure – everything inside is replaced with "[MASKED]"
-                whatsappMessage: maskObject(msg),
-                // Keep a timestamp (useful for debugging) – also masked for consistency
-                receivedAt: new Date().toISOString(),
+const payload = {
+                // Send the full WhatsApp message object (unmasked)
+                whatsappMessage: msg,
+                // Keep a timestamp for debugging
+                receivedAt: new Date().toISOString()
             };
-            // Log the masked payload before sending it to the API
-            console.log('🔗 Sending masked payload to API:', JSON.stringify(maskedPayload, null, 2));
+            // Log the payload before sending it to the API
+            console.log('🔗 Sending payload to API:', JSON.stringify(payload, null, 2));
            
            // ------------------------------------------------------------
            // 2️⃣ POST the payload to the placeholder endpoint (httpbin)
@@ -94,7 +76,7 @@ for (const msg of msgArray) {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
                  // The body is the *masked* JSON – safe to send anywhere
-                 body: JSON.stringify(maskedPayload),
+                 body: JSON.stringify(payload),
                  // Abort after 8 seconds (Node ≥ 18)
                  signal: AbortSignal.timeout(8000),
                });
@@ -102,26 +84,33 @@ for (const msg of msgArray) {
                // ------------------------------------------------------------
                // 3️⃣ (Future‑proof) Read a tiny flag that could override reply target
                // ------------------------------------------------------------
-               let replyToOriginal = false; // default = reply to bot's own JID
-               try {
-                 // httpbin will echo the request back under the `json` key.
-                 // In a real service we expect a top‑level boolean `replyToOriginal`.
-                 const respJson = await httpRes.json();
-                // Log the full response from the API (masked content already)
+let replyToOriginal = false; // default = reply to bot's own JID
+                let respJson = null;
+                try {
+                  // httpbin will echo the request back under the `json` key.
+                  // In a real service we expect a top‑level boolean `replyToOriginal`.
+                  respJson = await httpRes.json();
+                 // Log the full response from the API (masked content already)
                 console.log('🔗 API response status:', httpRes.status);
                 console.log('🔗 API response body:', JSON.stringify(respJson, null, 2));
-                 if (respJson && respJson.replyToOriginal === true) {
-                   replyToOriginal = true;
-                 }
-               } catch (_) {
-                 // If parsing fails, just keep the default behaviour.
-               }
+                if (respJson && respJson.replyToOriginal === true) {
+                  replyToOriginal = true;
+                }
+            } catch (_) {
+              // If parsing fails, just keep the default behaviour.
+            }
            
                // ------------------------------------------------------------
                // 4️⃣ Send the automatic self‑reply (or reply‑to‑original if flagged)
                // ------------------------------------------------------------
 let targetJid = replyToOriginal ? remoteJid : defaultReplyJid;
-            const replyText = '✅ Automated self‑reply (placeholder)';
+            let replyText;
+                // Use API response as reply text; if the API returns a specific field, use it, otherwise dump the whole JSON.
+                if (typeof respJson.replyText === 'string') {
+                  replyText = respJson.replyText;
+                } else {
+                  replyText = JSON.stringify(respJson);
+                }
             if (!targetJid) {
               console.warn('⚠️ No target JID for self‑reply; skipping send.');
             } else {
