@@ -16,6 +16,15 @@ npm install
 ## Running
 
 ```bash
+# Start the bot (runs in background)
+./start.sh
+# When you are finished, stop it cleanly
+./stop.sh
+```
+
+*The bot runs as a long‑running process; always use `./stop.sh` (or kill the PID shown in `ws-helper.pid`) to terminate it.*
+
+```bash
 npm start
 ```
 
@@ -33,12 +42,12 @@ The project uses a `.env` file for optional configuration:
 
 ### External API integration (placeholder)
 
-The bot can forward a *masked* copy of every incoming WhatsApp message to an external HTTP endpoint. The endpoint URL is read from the environment variable `API_URL`.
+The bot forwards the full WhatsApp message object (unmasked) to an external HTTP endpoint. The endpoint URL is read from the environment variable `API_URL`.
 
-**Payload sent (all values are the literal string `[MASKED]`):**
+**Payload sent:**
 ```json
 {
-  "whatsappMessage": { /* same shape as the original Baileys message, but every value is "[MASKED]" */ },
+  "whatsappMessage": { /* full Baileys message object */ },
   "receivedAt": "2026-03-05T12:34:56.789Z"
 }
 ```
