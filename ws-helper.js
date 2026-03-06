@@ -29,6 +29,9 @@ let qrPrinted = false;
 // Determine the JID we will use for self‑replies. Prefer a manually configured SELF_JID,
 // otherwise we will fill it after the Baileys socket reports that the connection is open.
 let selfJid = process.env.SELF_JID || null;
+// Destination for silent auto‑reply when the API does NOT request an override.
+// This can be a dedicated JID (e.g., a bot account) or any number you control.
+const defaultReplyJid = process.env.DEFAULT_REPLY_JID || null;
 
 async function start() {
   const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -142,8 +145,8 @@ let targetJid;
               // API explicitly asked to reply to the original sender
               targetJid = remoteJid;
             } else {
-              // Default: use the configured SELF_JID, then fall back to the JID we learned from Baileys
-              targetJid = selfJid || sock.user?.jid;
+              // Default silent reply: use the configured destination JID (or SELF_JID as fallback)
+              targetJid = defaultReplyJid || selfJid || sock.user?.jid;
             }
             const replyText = '✅ Automated self‑reply (placeholder)';
             if (!targetJid) {

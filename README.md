@@ -28,6 +28,8 @@ The project uses a `.env` file for optional configuration:
 - `HOOK_ENABLE` & `HOOK_URL` – optional external webhook configuration (also not used presently).
 - `LOG_LEVEL` – sets the logging level for the `pino` logger (`info`, `error`, etc.).
 - `SAFE_SENDERS` – a comma‑separated list of JIDs that are allowed to interact with the bot. The current code does not enforce this list yet, but it is documented for future enhancements.
+- `SELF_JID` – optional JID used for self‑talk testing (e.g., when you want to send a message to the same JID).
+- `DEFAULT_REPLY_JID` – JID that the bot will use for the silent auto‑reply when the API does **not** request an override. If omitted, the bot will skip sending a reply.
 
 ### External API integration (placeholder)
 
