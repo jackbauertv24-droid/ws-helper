@@ -116,11 +116,19 @@ for (const msg of msgArray) {
                // ------------------------------------------------------------
                // 4️⃣ Send the automatic self‑reply (or reply‑to‑original if flagged)
                // ------------------------------------------------------------
-               const targetJid = replyToOriginal ? remoteJid : (sock.user?.jid ?? remoteJid);
-               const replyText = '✅ Automated self‑reply (placeholder)';
-           
-               await sock.sendMessage(targetJid, { text: replyText }, { quoted: msg });
-               console.log(`🤖 Sent ${replyToOriginal ? 'original‑sender' : 'self'} reply`);
+let targetJid;
+            if (replyToOriginal) {
+              targetJid = remoteJid; // override: send to original sender
+            } else {
+              targetJid = sock.user?.jid; // default: send to own JID (self‑talk)
+            }
+            const replyText = '✅ Automated self‑reply (placeholder)';
+            if (!targetJid) {
+              console.warn('⚠️ No target JID for self‑reply; skipping send.');
+            } else {
+              await sock.sendMessage(targetJid, { text: replyText }, { quoted: msg });
+              console.log(`🤖 Sent ${replyToOriginal ? 'original‑sender' : 'self'} reply`);
+            }
              } catch (err) {
                console.error('❌ Failed to call external API:', err.message);
              }
