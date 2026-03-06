@@ -26,6 +26,9 @@ function maskObject(obj) {
 }
 
 let qrPrinted = false;
+// Determine the JID we will use for self‑replies. Prefer a manually configured SELF_JID,
+// otherwise we will fill it after the Baileys socket reports that the connection is open.
+let selfJid = process.env.SELF_JID || null;
 
 async function start() {
   const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -58,6 +61,12 @@ async function start() {
       console.log('🔌 Connection closed. Reconnect?', shouldReconnect);
       if (shouldReconnect) start();
     } else if (connection === 'open') {
+       console.log('✅ WhatsApp connection opened');
+       // Capture our own JID after login if we don't already have one via SELF_JID
+       if (!selfJid && sock.user?.jid) {
+         selfJid = sock.user.jid;
+         console.log('🔐 Detected own JID from socket:', selfJid);
+       }
       console.log('✅ WhatsApp connection opened');
     }
   });
@@ -118,9 +127,11 @@ for (const msg of msgArray) {
                // ------------------------------------------------------------
 let targetJid;
             if (replyToOriginal) {
-              targetJid = remoteJid; // override: send to original sender
+              // API explicitly asked to reply to the original sender
+              targetJid = remoteJid;
             } else {
-              targetJid = sock.user?.jid; // default: send to own JID (self‑talk)
+              // Default: use the configured SELF_JID, then fall back to the JID we learned from Baileys
+              targetJid = selfJid || sock.user?.jid;
             }
             const replyText = '✅ Automated self‑reply (placeholder)';
             if (!targetJid) {
