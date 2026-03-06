@@ -1,8 +1,9 @@
 #!/bin/bash
-# Start ws-helper as a detached background process and log output
-# Change to the directory containing this script (project root)
+# Start ws-helper as a detached background process and log output.
+# This script launches the bot in the background (via nohup) and records its PID.
+# IMPORTANT: The bot runs indefinitely. When you are done, stop it with ./stop.sh
+# or by killing the PID stored in ws-helper.pid.
 cd "$(dirname "$0")"
-# Start the bot with nohup, redirect both stdout and stderr to a log file, and run in background
-nohup npm start > ws-helper.log 2>&1 &
-# Save the PID so we can stop it later
+nohup npm start >> ws-helper.log 2>&1 &
+# Save the PID so we can stop it later (used by stop.sh)
 echo $! > ws-helper.pid
