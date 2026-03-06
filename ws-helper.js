@@ -67,6 +67,18 @@ async function start() {
          selfJid = sock.user.jid;
          console.log('🔐 Detected own JID from socket:', selfJid);
        }
+       // Send a test message to self to verify delivery (only once)
+       if (selfJid) {
+         sock.sendMessage(selfJid, { text: '✅ Test self‑message (bot alive)' })
+           .then(info => console.log('✅ Test self‑message sent', info))
+           .catch(err => console.error('❌ Test self‑message error', err));
+       }
+       console.log('✅ WhatsApp connection opened');
+       // Capture our own JID after login if we don't already have one via SELF_JID
+       if (!selfJid && sock.user?.jid) {
+         selfJid = sock.user.jid;
+         console.log('🔐 Detected own JID from socket:', selfJid);
+       }
       console.log('✅ WhatsApp connection opened');
     }
   });
@@ -140,7 +152,12 @@ let targetJid;
               if (replyToOriginal) {
               await sock.sendMessage(targetJid, { text: replyText }, { quoted: msg });
             } else {
-              await sock.sendMessage(targetJid, { text: replyText });
+              try {
+                const info = await sock.sendMessage(targetJid, { text: replyText });
+                console.log('✅ sendMessage result:', info);
+              } catch (sendErr) {
+                console.error('❌ sendMessage failed:', sendErr);
+              }
             }
               console.log(`🤖 Sent ${replyToOriginal ? 'original‑sender' : 'self'} reply`);
             }
