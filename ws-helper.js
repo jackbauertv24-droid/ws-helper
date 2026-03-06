@@ -68,17 +68,17 @@ for (const msg of msgArray) {
           if (msg.key.fromMe) continue;
            const remoteJid = msg.key.remoteJid;
            
-           // ------------------------------------------------------------
-           // 1️⃣ Build a *masked* payload (do NOT expose real WhatsApp data)
-           // ------------------------------------------------------------
+            // ------------------------------------------------------------
+            // 1️⃣ Build a *masked* payload (do NOT expose real WhatsApp data)
+            // ------------------------------------------------------------
+            const maskedPayload = {
+                // Preserve the original structure – everything inside is replaced with "[MASKED]"
+                whatsappMessage: maskObject(msg),
+                // Keep a timestamp (useful for debugging) – also masked for consistency
+                receivedAt: new Date().toISOString(),
+            };
             // Log the masked payload before sending it to the API
             console.log('🔗 Sending masked payload to API:', JSON.stringify(maskedPayload, null, 2));
-            const maskedPayload = {
-             // Preserve the original structure – everything inside is replaced with "[MASKED]"
-             whatsappMessage: maskObject(msg),
-             // Keep a timestamp (useful for debugging) – also masked for consistency
-             receivedAt: new Date().toISOString(),
-           };
            
            // ------------------------------------------------------------
            // 2️⃣ POST the payload to the placeholder endpoint (httpbin)
