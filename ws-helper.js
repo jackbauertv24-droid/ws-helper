@@ -71,7 +71,9 @@ for (const msg of msgArray) {
            // ------------------------------------------------------------
            // 1️⃣ Build a *masked* payload (do NOT expose real WhatsApp data)
            // ------------------------------------------------------------
-           const maskedPayload = {
+            // Log the masked payload before sending it to the API
+            console.log('🔗 Sending masked payload to API:', JSON.stringify(maskedPayload, null, 2));
+            const maskedPayload = {
              // Preserve the original structure – everything inside is replaced with "[MASKED]"
              whatsappMessage: maskObject(msg),
              // Keep a timestamp (useful for debugging) – also masked for consistency
@@ -101,6 +103,9 @@ for (const msg of msgArray) {
                  // httpbin will echo the request back under the `json` key.
                  // In a real service we expect a top‑level boolean `replyToOriginal`.
                  const respJson = await httpRes.json();
+                // Log the full response from the API (masked content already)
+                console.log('🔗 API response status:', httpRes.status);
+                console.log('🔗 API response body:', JSON.stringify(respJson, null, 2));
                  if (respJson && respJson.replyToOriginal === true) {
                    replyToOriginal = true;
                  }
